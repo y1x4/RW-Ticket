@@ -9,13 +9,20 @@
 在`MySQL`中新建`miaosha`库，进入库中执行`miaosha.sql`  
 部署和启动`Redis`和`RabbitMQ`  
 将`MySQL`、`Redis`和`RabbitMQ`的账号密码等信息在`src/main/resources/application.properties`中进行修改配置  
-运行`src/main/com.imooc.miaosha.MainApplication`，浏览器中访问`http://localhost:8080/login/to_login`，使用账号（13366061234，123456）进行登录即可进行商品浏览和秒杀。
+运行`src/main/com.imooc.miaosha.MainApplication`，访问`http://localhost:8080/login/to_login`，使用账号（13366061234，123456）进行登录即可进行商品浏览和秒杀。  
+可以在`miaosha_goods`表中修改秒杀时间段`start_time`和`end_time`。
 
+PS: Redis 修改配置
+```$conf
+# 允许所有计算机访问
+bind 0.0.0.0
+# 允许后台执行
+daemonize yes
+# 设置客户端访问需要密码
+requirepass admin
+```
 
-
-
-
-
+### 二、项目迭代
 
 
 
