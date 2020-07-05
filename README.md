@@ -4,13 +4,13 @@
 
 ### 一、如何启动项目
 
-`git clone`或直接下载到本地  
-导入到`Intellij IDEA`，加载`pom.xml`中的依赖  
-在`MySQL`中新建`miaosha`库，进入库中执行`miaosha.sql`  
-部署和启动`Redis`和`RabbitMQ`  
-将`MySQL`、`Redis`和`RabbitMQ`的账号密码等信息在`src/main/resources/application.properties`中进行修改配置  
-运行`src/main/com.imooc.miaosha.MainApplication`，访问`http://localhost:8080/login/to_login`，使用账号（13366061234，123456）进行登录即可进行商品浏览和秒杀。  
-可以在`miaosha_goods`表中修改秒杀时间段`start_time`和`end_time`。
+1. `git clone`或直接下载到本地  
+2. 导入到`Intellij IDEA`，加载`pom.xml`中的依赖  
+3. 在`MySQL`中新建`miaosha`库，进入库中执行`miaosha.sql`  
+4. 部署和启动`Redis`和`RabbitMQ`  
+5. 将`MySQL`、`Redis`和`RabbitMQ`的账号密码等信息在`src/main/resources/application.properties`中进行修改配置  
+6. 运行`src/main/com.imooc.miaosha.MainApplication`，访问`http://localhost:8080/login/to_login`，使用账号（13366061234，123456）进行登录即可进行商品浏览和秒杀。  
+7. 可以在`miaosha_goods`表中修改秒杀时间段`start_time`和`end_time`。
 
 PS: Redis 修改配置
 ```$conf
