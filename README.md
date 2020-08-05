@@ -1,6 +1,14 @@
-# 秒杀系统
+# RW-Ticket
 
-项目来源于慕课网课程《[Java秒杀系统方案优化 高性能高并发实战](https://coding.imooc.com/class/chapter/168.html)》，使用了多种缓存（Redis进行页面、用户、商品、订单等多种信息的缓存）、分布式session、RabbitMQ 异步下单、图形验证码、限流防刷等技术。
+RW-Ticket 是一个基于Java、SSM框架，采用前后端分离技术，通过使用Redis进行多种缓存、RabbitMQ异步下单，并实现了接口隐藏、验证码、接口限流等功能的校园票务系统，用于购买一些限量、优惠的讲座、演出等票务。
+
+- 完成基本功能（登录、浏览、下单）后，还使用不同层级和粒度的缓存对系统进行了优化，构造5000个虚拟用户、使用JMeter进行压力测试，结果显示QPS提升到之前的近2倍
+- 通过预减库存减少透穿到DB的请求，通过异步处理和排队机制缓解数据库的压力，降低应用接口负载
+- 实现接口隐藏、设置验证码、接口限流防刷等功能，提升了安全性，同时也减轻了系统压力
+
+![票务列表页面](/resources/list.png)
+![票务详情页面](/resources/detail.png)
+
 
 ### 一、如何启动项目
 
@@ -24,18 +32,9 @@ requirepass admin
 
 ### 二、项目迭代
 
-登录页，填入账户密码，密码在前端页面+固定salt 后POST提交到 /do_login，传入参数里 @Valid LoginVo 注解验证格式，然后查询数据库验证正确性，
-成功则添加cookie，将用户信息存到Redis中，前端页面根据返回的结果跳转到列表页/显示报错信息。
-列表页，一开始是直接从数据库取数据、模板渲染，后来是手动渲染、把页面存入缓存，下次可以直接取缓存。
-点击进入详情页，详情页改进：从数据库取->页面缓存->前后端分离。
-点击进行秒杀，判断库存、判断是否已购买、事务操作（减库存、下普通订单、下秒杀订单）。进入订单页或失败页面。
-使用异步队列下单。
-接口隐藏、验证码、限流防刷（拦截器+访问次数缓存）。
+项目的核心是一个秒杀系统，参考了[这门慕课网课程](https://coding.imooc.com/class/chapter/168.html)，利用缓存、异步来应对大并发。
 
----
-学到：如何利用缓存、异步应对大并发
-
-### 一、项目搭建
+##### 一、项目搭建
 Result 类对返回的JSON结果进行封装,包含 int code、String msg、T data。
 集成 Thymeleaf 前端模板；集成 MyBatis、Druid，可以在业务层用@Transactional注解进行事务管理。
 安装、设置、集成 Redis，使用时从 JedisPool 连接池（单机版）中获取 Jedis对象，使用完放回。存取User对象到Redis时使用了 fastjson 进行 String 与 Bean 之间的解析。
@@ -55,7 +54,7 @@ Redis设置：
 	KeyPrefix： int expireSeconds()、String getPrefix();
 	BasePrefix： expireSeconds 默认为0，getPrefix = className + ":" + prefix
 
-### 二、登录功能
+##### 二、登录功能
 /login/to_login -> login.html，前端对输入的账号密码进行简单的校验，然后 formPass = MD5(密码+固定salt) 后 POST 提交到 /login/do_login ，登录成功则跳转至 /goods/to_list 商品列表页。若存在手机号，且 dbPass == MD5(formPass+个人salt) 则验证成功，生成新的cookie放入response（若已有该用户的，相当于延长过期时间）。
 两次 MD5 加密，第一次防止明文密码在网络上传输，第二次防止数据库被盗后将一次加密反向破解。
 
@@ -72,12 +71,12 @@ JSR303参数校验
 
 	GoodsController 中每个方法里都要获取user，重复；可以实现一个 ArgumentResolver ，通过传入的token或cookie里查找到的token获取 user 对象，直接在参数里将其注入。
 
-### 三、秒杀功能
+##### 三、秒杀功能
 miaosha_user、goods、miaosha_goods、miaosha_order、order_info 几张表。
 商品列表页进入详情页，如果未登录（没有user），会提示登录，点击秒杀会跳转到登录页面。根据后端时间计算传入的状态码，有秒杀未开始（倒计时，不断回调 countdown()）、秒杀进行中（按钮可使用）、秒杀已结束三种情况。
 秒杀：从数据库中读取判断商品库存、判断是否已有秒杀订单（user_id+goods_id），然后进行秒杀步骤（事务操作）：减库存、创建普通订单、创建秒杀订单。成功进入订单详情页，失败进入秒杀失败页面。
 
-### 四、JMeter 压力测试
+##### 四、JMeter 压力测试
 在 0s 内启动（并发） 1000 个线程用设置的 HTTP请求访问指定路径，聚合报告页面中的Throughput表示吞吐量，可以简单的理解为QPS（Queries-per-second）。终端使用top命令监控CPU，Load Avg表示系统平均负载，增大线程数再运行可以看到负载增大。瓶颈在于数据库。
 测试 /user/info 根据cookie获取用户信息，可以看到没了数据库的瓶颈，吞吐量大了很多。
 还可导入文件配置，模拟多个用户的测试。
@@ -96,7 +95,7 @@ Redis压测工具：redis-benchmark
 一般说并发多少的时候QPS（Queries-per-second）是多少，还有TPS
 
 
-### 五、页面级高并发秒杀优化（Redis缓存+静态化分离）
+##### 五、页面级高并发秒杀优化（Redis缓存+静态化分离）
 页面缓存、URL缓存：适用于变化不大的页面，列表页、详情页，先从缓存里查找，若有则返回，若无则从数据库里查询、存入缓存、返回。过期时间很快，60s。
 对象缓存：token - user 对象。改密码讲解了更新缓存的步骤：获取用户、更新数据库、更新缓存。
 
@@ -120,7 +119,7 @@ ADD unique INDEX `u_uid_gid` USING BTREE (`user_id`, `goods_id`); 这样就不�
 to_list: QPS 1935；do_miaosha: QPS 1510，快了不少，MySQL压力还是比Redis大。
 
 
-### 六、服务级高并发秒杀优化（RabbitMQ+接口优化）
+##### 六、服务级高并发秒杀优化（RabbitMQ+接口优化）
 思路：减少数据库访问
 	1、系统初始化，把商品库存数量加载到Redis；
 	2、收到请求，（内存标记：map记录无库存商品，商品少，返回结果快，减少redis访问），Redis预减库存，库存不足，直接返回，否则进入3；
@@ -146,7 +145,7 @@ do_miaosha: QPS 1926，Java、redis排前面，MySQL开始时出现了，后来�
 Nginx横向扩展：通过配置**反向代理**到多台服务器，**负载均衡**。Nginx也可以缓存。
 Nginx前还可配置LVS（Linux虚拟服务器）。
 
-### 七、安全优化
+##### 七、安全优化
 一、秒杀接口地址隐藏 
 思路：秒杀开始之前，先去请求接口获取秒杀地址（即生成特定 path，并存入缓存）
 1、接口改造，带上PathVariable参数
@@ -165,52 +164,9 @@ Nginx前还可配置LVS（Linux虚拟服务器）。
 不同接口限制次数不同，改进：@AccessLimit，通过拦截器拦截方法上的注解，进行限流操作。同时拦截了用户信息，存入ThreadLocal，UserArgumentResolver里直接获取就行了。
 
 
-### 八、Tomcat服务端优化（Tomcat/Ngnix/LVS/Keepalived）
+##### 八、Tomcat服务端优化（Tomcat/Ngnix/LVS/Keepalived）
 
 to be continued...
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
