@@ -9,7 +9,7 @@
 3. 在`MySQL`中新建`miaosha`库，进入库中执行`miaosha.sql`  
 4. 部署和启动`Redis`和`RabbitMQ`  
 5. 将`MySQL`、`Redis`和`RabbitMQ`的账号密码等信息在`src/main/resources/application.properties`中进行修改配置  
-6. 运行`src/main/com.imooc.miaosha.MainApplication`，访问`http://localhost:8080/login/to_login`，使用账号（13366061234，123456）进行登录即可进行商品浏览和秒杀。  
+6. 运行`src/main/com.rwticket.miaosha.MainApplication`，访问`http://localhost:8080/login/to_login`，使用账号（13366061234，123456）进行登录即可进行商品浏览和秒杀。  
 7. 可以在`miaosha_goods`表中修改秒杀时间段`start_time`和`end_time`。
 
 PS: Redis 修改配置
@@ -24,8 +24,13 @@ requirepass admin
 
 ### 二、项目迭代
 
-
-
+登录页，填入账户密码，密码在前端页面+固定salt 后POST提交到 /do_login，传入参数里 @Valid LoginVo 注解验证格式，然后查询数据库验证正确性，
+成功则添加cookie，将用户信息存到Redis中，前端页面根据返回的结果跳转到列表页/显示报错信息。
+列表页，一开始是直接从数据库取数据、模板渲染，后来是手动渲染、把页面存入缓存，下次可以直接取缓存。
+点击进入详情页，详情页改进：从数据库取->页面缓存->前后端分离。
+点击进行秒杀，判断库存、判断是否已购买、事务操作（减库存、下普通订单、下秒杀订单）。进入订单页或失败页面。
+使用异步队列下单。
+接口隐藏、验证码、限流防刷（拦截器+访问次数缓存）。
 
 ---
 学到：如何利用缓存、异步应对大并发
