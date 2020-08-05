@@ -34,7 +34,7 @@ requirepass admin
 
 项目的核心是一个秒杀系统，参考了[这门慕课网课程](https://coding.imooc.com/class/chapter/168.html)，利用缓存、异步来应对大并发。
 
-#### 一、项目搭建
+#### 1.项目搭建
 
 Result 类对返回的JSON结果进行封装,包含 int code、String msg、T data。
 
@@ -57,7 +57,7 @@ Redis设置：
 	KeyPrefix： int expireSeconds()、String getPrefix();
 	BasePrefix： expireSeconds 默认为0，getPrefix = className + ":" + prefix
 
-#### 二、登录功能
+#### 2.登录功能
 /login/to_login -> login.html，前端对输入的账号密码进行简单的校验，然后 formPass = MD5(密码+固定salt) 后 POST 提交到 /login/do_login ，登录成功则跳转至 /goods/to_list 商品列表页。若存在手机号，且 dbPass == MD5(formPass+个人salt) 则验证成功，生成新的cookie放入response（若已有该用户的，相当于延长过期时间）。
 
 两次 MD5 加密，第一次防止明文密码在网络上传输，第二次防止数据库被盗后将一次加密反向破解。
@@ -75,14 +75,14 @@ JSR303参数校验
 
 	GoodsController 中每个方法里都要获取user，重复；可以实现一个 ArgumentResolver ，通过传入的token或cookie里查找到的token获取 user 对象，直接在参数里将其注入。
 
-#### 三、秒杀功能
+#### 3.秒杀功能
 miaosha_user、goods、miaosha_goods、miaosha_order、order_info 几张表。
 
 商品列表页进入详情页，如果未登录（没有user），会提示登录，点击秒杀会跳转到登录页面。根据后端时间计算传入的状态码，有秒杀未开始（倒计时，不断回调 countdown()）、秒杀进行中（按钮可使用）、秒杀已结束三种情况。
 
 秒杀：从数据库中读取判断商品库存、判断是否已有秒杀订单（user_id+goods_id），然后进行秒杀步骤（事务操作）：减库存、创建普通订单、创建秒杀订单。成功进入订单详情页，失败进入秒杀失败页面。
 
-#### 四、JMeter 压力测试
+#### 4.JMeter 压力测试
 在 0s 内启动（并发） 1000 个线程用设置的 HTTP请求访问指定路径，聚合报告页面中的Throughput表示吞吐量，可以简单的理解为QPS（Queries-per-second）。终端使用top命令监控CPU，Load Avg表示系统平均负载，增大线程数再运行可以看到负载增大。瓶颈在于数据库。
 
 测试 /user/info 根据cookie获取用户信息，可以看到没了数据库的瓶颈，吞吐量大了很多。还可导入文件配置，模拟多个用户的测试。
@@ -101,7 +101,7 @@ Redis压测工具：redis-benchmark
 一般说并发多少的时候QPS（Queries-per-second）是多少，还有TPS
 
 
-#### 五、页面级高并发秒杀优化（Redis缓存+静态化分离）
+#### 5.页面级高并发秒杀优化（Redis缓存+静态化分离）
 页面缓存、URL缓存：适用于变化不大的页面，列表页、详情页，先从缓存里查找，若有则返回，若无则从数据库里查询、存入缓存、返回。过期时间很快，60s。
 
 对象缓存：token - user 对象。改密码讲解了更新缓存的步骤：获取用户、更新数据库、更新缓存。
@@ -126,7 +126,7 @@ ADD unique INDEX `u_uid_gid` USING BTREE (`user_id`, `goods_id`); 这样就不�
 to_list: QPS 1935；do_miaosha: QPS 1510，快了不少，MySQL压力还是比Redis大。
 
 
-#### 六、服务级高并发秒杀优化（RabbitMQ+接口优化）
+#### 6.服务级高并发秒杀优化（RabbitMQ+接口优化）
 思路：减少数据库访问
 	1、系统初始化，把商品库存数量加载到Redis；
 	2、收到请求，（内存标记：map记录无库存商品，商品少，返回结果快，减少redis访问），Redis预减库存，库存不足，直接返回，否则进入3；
@@ -152,7 +152,7 @@ do_miaosha: QPS 1926，Java、redis排前面，MySQL开始时出现了，后来�
 Nginx横向扩展：通过配置**反向代理**到多台服务器，**负载均衡**。Nginx也可以缓存。
 Nginx前还可配置LVS（Linux虚拟服务器）。
 
-#### 七、安全优化
+#### 7.安全优化
 一、秒杀接口地址隐藏 
 思路：秒杀开始之前，先去请求接口获取秒杀地址（即生成特定 path，并存入缓存）
 1、接口改造，带上PathVariable参数
@@ -171,7 +171,7 @@ Nginx前还可配置LVS（Linux虚拟服务器）。
 不同接口限制次数不同，改进：@AccessLimit，通过拦截器拦截方法上的注解，进行限流操作。同时拦截了用户信息，存入ThreadLocal，UserArgumentResolver里直接获取就行了。
 
 
-#### 八、Tomcat服务端优化（Tomcat/Ngnix/LVS/Keepalived）
+#### 8.Tomcat服务端优化（Tomcat/Ngnix/LVS/Keepalived）
 
 to be continued...
 
