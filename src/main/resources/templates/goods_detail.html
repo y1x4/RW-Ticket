@@ -21,22 +21,22 @@
 <body>
 
 <div class="panel panel-default">
-    <div class="panel-heading">秒杀商品详情</div>
+    <div class="panel-heading">票务详情</div>
     <div class="panel-body">
         <span th:if="${user eq null}"> 您还没有登录，请登陆后再操作<br/></span>
         <span>没有收货地址的提示。。。</span>
     </div>
     <table class="table" id="goodslist">
         <tr>
-            <td>商品名称</td>
+            <td>名称</td>
             <td colspan="3" th:text="${goods.goodsName}"></td>
         </tr>
         <tr>
-            <td>商品图片</td>
+            <td>图片</td>
             <td colspan="3"><img th:src="@{${goods.goodsImg}}" width="200" height="200"/></td>
         </tr>
         <tr>
-            <td>秒杀开始时间</td>
+            <td>购票开始时间</td>
             <td th:text="${#dates.format(goods.startDate, 'yyyy-MM-dd HH:mm:ss')}"></td>
             <td id="miaoshaTip">
                 <input type="hidden" id="remainSeconds" th:value="${remainSeconds}"/>
@@ -53,15 +53,15 @@
             </td>
         </tr>
         <tr>
-            <td>商品原价</td>
+            <td>原价</td>
             <td colspan="3" th:text="${goods.goodsPrice}"></td>
         </tr>
         <tr>
-            <td>秒杀价</td>
+            <td>学生价</td>
             <td colspan="3" th:text="${goods.miaoshaPrice}"></td>
         </tr>
         <tr>
-            <td>库存数量</td>
+            <td>剩余数量</td>
             <td colspan="3" th:text="${goods.stockCount}"></td>
         </tr>
     </table>
